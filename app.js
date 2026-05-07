@@ -32,6 +32,7 @@ const els = {
   authPassword: document.querySelector("#authPassword"),
   authStatus: document.querySelector("#authStatus"),
   signUpButton: document.querySelector("#signUpButton"),
+  changeConnectionButton: document.querySelector("#changeConnectionButton"),
   signOutButton: document.querySelector("#signOutButton"),
   userPill: document.querySelector("#userPill"),
   appContent: document.querySelector("#appContent"),
@@ -80,6 +81,7 @@ function init() {
   els.setupForm.addEventListener("submit", handleSetupSave);
   els.authForm.addEventListener("submit", handleSignIn);
   els.signUpButton.addEventListener("click", handleSignUp);
+  els.changeConnectionButton.addEventListener("click", handleChangeConnection);
   els.signOutButton.addEventListener("click", handleSignOut);
   els.monthTabs.addEventListener("click", handleMonthClick);
   els.transactionBody.addEventListener("change", handleTransactionChange);
@@ -126,11 +128,16 @@ async function startAuth() {
 
 async function handleSetupSave(event) {
   event.preventDefault();
-  const supabaseUrl = els.supabaseUrlInput.value.trim();
+  const supabaseUrl = normalizeSupabaseUrl(els.supabaseUrlInput.value);
   const supabaseAnonKey = els.supabaseAnonInput.value.trim();
 
   if (!supabaseUrl || !supabaseAnonKey) {
-    setStatus(els.setupStatus, "Fyll i både URL och anon-nyckel.", true);
+    setStatus(els.setupStatus, "Fyll i Project URL och anon/publishable key.", true);
+    return;
+  }
+
+  if (!/^https:\/\/[a-z0-9-]+\.supabase\.co$/i.test(supabaseUrl)) {
+    setStatus(els.setupStatus, "URL:en ska se ut så här: https://projekt-id.supabase.co", true);
     return;
   }
 
@@ -156,6 +163,12 @@ async function handleSignUp() {
     error ? error.message : "Konto skapat. Lägg användaren i household_members i Supabase innan datan syns.",
     Boolean(error),
   );
+}
+
+async function handleChangeConnection() {
+  localStorage.removeItem(CONFIG_KEY);
+  await db?.auth?.signOut();
+  window.location.reload();
 }
 
 async function handleSignOut() {
@@ -801,6 +814,21 @@ function getSupabaseConfig() {
     return null;
   }
   return null;
+}
+
+function normalizeSupabaseUrl(value) {
+  const raw = value.trim();
+  if (!raw) return "";
+
+  try {
+    const url = new URL(raw);
+    if (url.hostname.endsWith(".supabase.co")) {
+      return `${url.protocol}//${url.hostname}`;
+    }
+    return raw;
+  } catch {
+    return raw;
+  }
 }
 
 function showOnly(mode) {
