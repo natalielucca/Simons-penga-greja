@@ -19,6 +19,26 @@ as $$
   );
 $$;
 
+create or replace function public.household_role()
+returns text
+language sql
+security definer
+set search_path = public
+as $$
+  select role
+  from public.household_members
+  where user_id = auth.uid();
+$$;
+
+create or replace function public.is_child_member()
+returns boolean
+language sql
+security definer
+set search_path = public
+as $$
+  select public.household_role() = 'child';
+$$;
+
 create table if not exists public.transactions (
   id uuid primary key default gen_random_uuid(),
   date date not null,
@@ -79,14 +99,14 @@ drop policy if exists "members can insert transactions" on public.transactions;
 create policy "members can insert transactions"
 on public.transactions
 for insert
-with check (public.is_household_member());
+with check (public.is_child_member());
 
 drop policy if exists "members can update transactions" on public.transactions;
 create policy "members can update transactions"
 on public.transactions
 for update
-using (public.is_household_member())
-with check (public.is_household_member());
+using (public.is_child_member())
+with check (public.is_child_member());
 
 drop policy if exists "members can read reflections" on public.reflections;
 create policy "members can read reflections"
@@ -98,8 +118,8 @@ drop policy if exists "members can write reflections" on public.reflections;
 create policy "members can write reflections"
 on public.reflections
 for all
-using (public.is_household_member())
-with check (public.is_household_member());
+using (public.is_child_member())
+with check (public.is_child_member());
 
 drop policy if exists "members can read budgets" on public.budgets;
 create policy "members can read budgets"
@@ -111,8 +131,8 @@ drop policy if exists "members can write budgets" on public.budgets;
 create policy "members can write budgets"
 on public.budgets
 for all
-using (public.is_household_member())
-with check (public.is_household_member());
+using (public.is_child_member())
+with check (public.is_child_member());
 
 drop policy if exists "members can read settings" on public.app_settings;
 create policy "members can read settings"
@@ -124,5 +144,5 @@ drop policy if exists "members can write settings" on public.app_settings;
 create policy "members can write settings"
 on public.app_settings
 for all
-using (public.is_household_member())
-with check (public.is_household_member());
+using (public.is_child_member())
+with check (public.is_child_member());

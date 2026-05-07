@@ -68,6 +68,7 @@ let transactions = [];
 let months = [];
 let state = {
   selectedMonth: localStorage.getItem(SELECTED_MONTH_KEY) || START_MONTH,
+  role: null,
   reflections: {},
   budgets: {},
   customCategories: ["", ""],
@@ -170,24 +171,33 @@ async function loadAppData() {
   els.signOutButton.classList.remove("is-hidden");
 
   const [
+    { data: memberRow, error: memberError },
     { data: transactionRows, error: transactionError },
     { data: reflectionRows, error: reflectionError },
     { data: budgetRows, error: budgetError },
     { data: settingsRow, error: settingsError },
   ] = await Promise.all([
+    db.from("household_members").select("role").eq("user_id", session.user.id).maybeSingle(),
     db.from("transactions").select("*").order("date", { ascending: false }),
     db.from("reflections").select("*"),
     db.from("budgets").select("*"),
     db.from("app_settings").select("*").eq("id", "main").maybeSingle(),
   ]);
 
-  const error = transactionError || reflectionError || budgetError || settingsError;
+  const error = memberError || transactionError || reflectionError || budgetError || settingsError;
   if (error) {
     setStatus(els.readyPill, "Databasfel", true);
     els.reportOutput.textContent = error.message;
     return;
   }
 
+  if (!memberRow) {
+    setStatus(els.readyPill, "Ingen åtkomst ännu", true);
+    els.reportOutput.textContent = "Kontot finns, men är inte tillagt i household_members i Supabase ännu.";
+    return;
+  }
+
+  state.role = memberRow.role;
   transactions = (transactionRows || []).map(normalizeTransaction);
   months = [...new Set(transactions.map((tx) => tx.month))].sort().reverse();
   if (!months.includes(state.selectedMonth)) {
@@ -237,6 +247,8 @@ function renderTitles() {
   els.reportTitle.textContent = `Visa mamma - ${formatMonth(state.selectedMonth)}`;
   els.budgetTitle.textContent = `Budget för ${formatNextMonth(state.selectedMonth)}`;
   els.pasteTitle.textContent = `Klistra in rader för ${formatMonth(state.selectedMonth)}`;
+  els.pasteInput.disabled = !canWrite();
+  els.pasteForm.querySelector("button[type='submit']").disabled = !canWrite();
 }
 
 function renderMonthTabs() {
@@ -267,6 +279,7 @@ function renderCustomCategories() {
   getCustomCategoryLabels().forEach((label, index) => {
     const input = els.customCategoryFields.querySelector(`[data-custom-index="${index}"]`);
     if (input && input.value !== label) input.value = label;
+    if (input) input.disabled = !canWrite();
   });
 }
 
@@ -297,12 +310,12 @@ function renderTransactions() {
           </td>
           <td class="amount ${tx.amount >= 0 ? "is-plus" : "is-minus"}">${formatMoney(tx.amount)}</td>
           <td>
-            <select class="row-select" data-id="${tx.id}" data-field="category" ${tx.amount > 0 ? "disabled" : ""}>
+            <select class="row-select" data-id="${tx.id}" data-field="category" ${tx.amount > 0 || !canWrite() ? "disabled" : ""}>
               ${categoryOptions(tx)}
             </select>
           </td>
           <td>
-            <input class="note-input" data-id="${tx.id}" data-field="note" value="${escapeAttribute(tx.note)}" placeholder="kort" />
+            <input class="note-input" data-id="${tx.id}" data-field="note" value="${escapeAttribute(tx.note)}" placeholder="kort" ${canWrite() ? "" : "disabled"} />
           </td>
         </tr>
       `;
@@ -342,6 +355,9 @@ function renderReflections() {
   els.skipBuyInput.value = reflection.skip_buy || "";
   els.surpriseInput.value = reflection.surprise || "";
   els.goalInput.value = reflection.goal || "";
+  [els.bestBuyInput, els.skipBuyInput, els.surpriseInput, els.goalInput].forEach((input) => {
+    input.disabled = !canWrite();
+  });
 }
 
 function renderBudget() {
@@ -360,7 +376,7 @@ function renderBudget() {
           <span class="budget-dot" style="--dot: ${getCategoryColor(category.id)}"></span>
           ${category.label}
         </span>
-        <input class="budget-input" type="number" min="0" step="10" data-budget-id="${category.id}" value="${budget[category.id] || 0}" />
+        <input class="budget-input" type="number" min="0" step="10" data-budget-id="${category.id}" value="${budget[category.id] || 0}" ${canWrite() ? "" : "disabled"} />
       </label>
     `)
     .join("");
@@ -404,6 +420,12 @@ function handleMonthClick(event) {
 }
 
 async function handleTransactionChange(event) {
+  if (!canWrite()) {
+    setStatus(els.readyPill, "Endast Simon kan ändra.", true);
+    render();
+    return;
+  }
+
   const target = event.target;
   const id = target.dataset.id;
   if (!id) return;
@@ -433,6 +455,11 @@ async function handleTransactionChange(event) {
 
 async function handlePasteSubmit(event) {
   event.preventDefault();
+  if (!canWrite()) {
+    setStatus(els.pasteStatus, "Endast Simon kan lägga till rader.", true);
+    return;
+  }
+
   const parsedRows = els.pasteInput.value
     .split("\n")
     .map((line, index) => parseTransactionLine(line, index))
@@ -474,6 +501,12 @@ async function handlePasteSubmit(event) {
 }
 
 function handleBudgetInput(event) {
+  if (!canWrite()) {
+    setStatus(els.readyPill, "Endast Simon kan ändra budget.", true);
+    renderBudget();
+    return;
+  }
+
   const input = event.target.closest("[data-budget-id]");
   if (!input) return;
   const budget = getBudget(state.selectedMonth);
@@ -485,6 +518,12 @@ function handleBudgetInput(event) {
 }
 
 function handleCustomCategoryInput(event) {
+  if (!canWrite()) {
+    setStatus(els.readyPill, "Endast Simon kan ändra kategorier.", true);
+    renderCustomCategories();
+    return;
+  }
+
   const input = event.target.closest("[data-custom-index]");
   if (!input) return;
   const labels = getCustomCategoryLabels();
@@ -521,6 +560,12 @@ const saveSettings = debounce(async () => {
 }, 450);
 
 async function saveReflectionFromInputs() {
+  if (!canWrite()) {
+    setStatus(els.readyPill, "Endast Simon kan ändra.", true);
+    renderReflections();
+    return;
+  }
+
   const row = {
     month: state.selectedMonth,
     best_buy: els.bestBuyInput.value,
@@ -764,6 +809,10 @@ function showOnly(mode) {
   els.appContent.classList.toggle("is-hidden", mode !== "app");
   els.userPill.classList.toggle("is-hidden", mode !== "app");
   els.signOutButton.classList.toggle("is-hidden", mode !== "app");
+}
+
+function canWrite() {
+  return state.role === "child";
 }
 
 function setStatus(element, message, isWarning = false) {
