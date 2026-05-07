@@ -5,135 +5,190 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Simons penga-greja</title>
     <link rel="stylesheet" href="./styles.css" />
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   </head>
   <body>
     <main class="app-shell">
       <header class="topbar">
         <div>
-          <p class="eyebrow">Barnbidrag 1 250 kr</p>
+          <p class="eyebrow">Privat budgetgrej</p>
           <h1>Simons penga-greja</h1>
         </div>
         <div class="topbar__actions">
-          <button class="icon-button" id="resetButton" type="button" title="Återställ" aria-label="Återställ">↺</button>
+          <span class="user-pill is-hidden" id="userPill"></span>
+          <button class="icon-button" id="resetButton" type="button" title="Ladda om" aria-label="Ladda om">↻</button>
           <button class="button button--soft" id="printButton" type="button">Skriv ut</button>
+          <button class="button button--soft is-hidden" id="signOutButton" type="button">Logga ut</button>
         </div>
       </header>
 
-      <section class="status-strip" aria-label="Månadsöversikt">
-        <div class="month-tabs" id="monthTabs"></div>
-        <div class="status-pill" id="readyPill"></div>
+      <section class="panel setup-panel is-hidden" id="setupPanel" aria-label="Supabase-inställning">
+        <div class="panel__header">
+          <div>
+            <p class="eyebrow">Första gången</p>
+            <h2>Koppla privat databas</h2>
+          </div>
+        </div>
+        <p class="helper-text">
+          Skapa ett Supabase-projekt, kör SQL-filen i repot och klistra sedan in projektets URL och anon-nyckel här.
+        </p>
+        <form class="setup-form" id="setupForm">
+          <label class="field">
+            <span>Supabase URL</span>
+            <input id="supabaseUrlInput" type="url" placeholder="https://xxxx.supabase.co" autocomplete="off" />
+          </label>
+          <label class="field">
+            <span>Anon public key</span>
+            <input id="supabaseAnonInput" type="password" placeholder="eyJ..." autocomplete="off" />
+          </label>
+          <div class="paste-actions">
+            <button class="button" type="submit">Spara koppling</button>
+            <span class="paste-status" id="setupStatus"></span>
+          </div>
+        </form>
       </section>
 
-      <section class="summary-grid" id="summaryGrid" aria-label="Kategorisummering"></section>
+      <section class="panel auth-panel is-hidden" id="authPanel" aria-label="Logga in">
+        <div class="panel__header">
+          <div>
+            <p class="eyebrow">Privat läge</p>
+            <h2>Logga in</h2>
+          </div>
+        </div>
+        <form class="auth-form" id="authForm">
+          <label class="field">
+            <span>E-post</span>
+            <input id="authEmail" type="email" autocomplete="email" />
+          </label>
+          <label class="field">
+            <span>Lösenord</span>
+            <input id="authPassword" type="password" autocomplete="current-password" />
+          </label>
+          <div class="paste-actions">
+            <button class="button" id="signInButton" type="submit">Logga in</button>
+            <button class="button button--soft" id="signUpButton" type="button">Skapa konto</button>
+            <span class="paste-status" id="authStatus"></span>
+          </div>
+        </form>
+      </section>
 
-      <section class="workspace">
-        <section class="panel panel--transactions" aria-label="Transaktioner">
+      <section class="app-content is-hidden" id="appContent">
+        <section class="status-strip" aria-label="Månadsöversikt">
+          <div class="month-tabs" id="monthTabs"></div>
+          <div class="status-pill" id="readyPill"></div>
+        </section>
+
+        <section class="summary-grid" id="summaryGrid" aria-label="Kategorisummering"></section>
+
+        <section class="workspace">
+          <section class="panel panel--transactions" aria-label="Transaktioner">
+            <div class="panel__header">
+              <div>
+                <p class="eyebrow">Steg 1</p>
+                <h2>Sortera månaden</h2>
+              </div>
+              <div class="mini-score" id="clarityScore"></div>
+            </div>
+
+            <div class="category-legend" id="categoryLegend"></div>
+
+            <div class="table-wrap">
+              <table class="transaction-table">
+                <thead>
+                  <tr>
+                    <th>Datum</th>
+                    <th>Text</th>
+                    <th>Belopp</th>
+                    <th>Kategori</th>
+                    <th>Minne</th>
+                  </tr>
+                </thead>
+                <tbody id="transactionBody"></tbody>
+              </table>
+            </div>
+          </section>
+
+          <aside class="panel panel--report" aria-label="Redovisning">
+            <div class="panel__header">
+              <div>
+                <p class="eyebrow">Steg 2</p>
+                <h2 id="reportTitle">Visa mamma</h2>
+              </div>
+              <button class="button button--small" id="copyReportButton" type="button">Kopiera</button>
+            </div>
+
+            <div class="reflection-grid">
+              <label class="field">
+                <span>Bästa köpet</span>
+                <textarea id="bestBuyInput" rows="2"></textarea>
+              </label>
+              <label class="field">
+                <span>Kunde skippat</span>
+                <textarea id="skipBuyInput" rows="2"></textarea>
+              </label>
+              <label class="field">
+                <span>Största överraskningen</span>
+                <textarea id="surpriseInput" rows="2"></textarea>
+              </label>
+              <label class="field">
+                <span>Nästa månads mål</span>
+                <textarea id="goalInput" rows="2"></textarea>
+              </label>
+            </div>
+
+            <div class="report-output" id="reportOutput"></div>
+          </aside>
+        </section>
+
+        <section class="panel panel--budget" aria-label="Budget">
           <div class="panel__header">
             <div>
-              <p class="eyebrow">Steg 1</p>
-              <h2>Sortera månaden</h2>
+              <p class="eyebrow">Steg 3</p>
+              <h2 id="budgetTitle">Budget för nästa 1 250 kr</h2>
             </div>
-            <div class="mini-score" id="clarityScore"></div>
+            <div class="budget-total" id="budgetTotal"></div>
           </div>
 
-          <div class="category-legend" id="categoryLegend"></div>
+          <div class="custom-category-panel" aria-label="Egna kategorier">
+            <p class="eyebrow">Egna kategorier</p>
+            <div class="custom-category-grid" id="customCategoryFields">
+              <label class="field">
+                <span>Extra kategori 1</span>
+                <input class="custom-category-input" type="text" maxlength="22" data-custom-index="0" placeholder="Ex. spel" />
+              </label>
+              <label class="field">
+                <span>Extra kategori 2</span>
+                <input class="custom-category-input" type="text" maxlength="22" data-custom-index="1" placeholder="Ex. presenter" />
+              </label>
+            </div>
+          </div>
 
-          <div class="table-wrap">
-            <table class="transaction-table">
-              <thead>
-                <tr>
-                  <th>Datum</th>
-                  <th>Text</th>
-                  <th>Belopp</th>
-                  <th>Kategori</th>
-                  <th>Minne</th>
-                </tr>
-              </thead>
-              <tbody id="transactionBody"></tbody>
-            </table>
+          <div class="budget-layout">
+            <div class="budget-controls" id="budgetControls"></div>
+            <div class="budget-chart" id="budgetChart"></div>
           </div>
         </section>
 
-        <aside class="panel panel--report" aria-label="Redovisning">
-          <div class="panel__header">
+        <section class="panel panel--paste" aria-label="Klistra in nya rader">
+          <form class="paste-panel" id="pasteForm">
             <div>
-              <p class="eyebrow">Steg 2</p>
-              <h2 id="reportTitle">Visa mamma</h2>
+              <p class="eyebrow">Nya rader</p>
+              <h3 id="pasteTitle">Klistra in transaktioner</h3>
             </div>
-            <button class="button button--small" id="copyReportButton" type="button">Kopiera</button>
-          </div>
-
-          <div class="reflection-grid">
             <label class="field">
-              <span>Bästa köpet</span>
-              <textarea id="bestBuyInput" rows="2"></textarea>
+              <span>Bankrader</span>
+              <textarea
+                id="pasteInput"
+                rows="4"
+                placeholder="2026-05-03	BUTIK/26-05-02	-24.95"
+              ></textarea>
             </label>
-            <label class="field">
-              <span>Kunde skippat</span>
-              <textarea id="skipBuyInput" rows="2"></textarea>
-            </label>
-            <label class="field">
-              <span>Största överraskningen</span>
-              <textarea id="surpriseInput" rows="2"></textarea>
-            </label>
-            <label class="field">
-              <span>Nästa månads mål</span>
-              <textarea id="goalInput" rows="2"></textarea>
-            </label>
-          </div>
-
-          <div class="report-output" id="reportOutput"></div>
-        </aside>
-      </section>
-
-      <section class="panel panel--budget" aria-label="Budget">
-        <div class="panel__header">
-          <div>
-            <p class="eyebrow">Steg 3</p>
-            <h2 id="budgetTitle">Budget för nästa 1 250 kr</h2>
-          </div>
-          <div class="budget-total" id="budgetTotal"></div>
-        </div>
-
-        <div class="custom-category-panel" aria-label="Egna kategorier">
-          <p class="eyebrow">Egna kategorier</p>
-          <div class="custom-category-grid" id="customCategoryFields">
-            <label class="field">
-              <span>Extra kategori 1</span>
-              <input class="custom-category-input" type="text" maxlength="22" data-custom-index="0" placeholder="Ex. spel" />
-            </label>
-            <label class="field">
-              <span>Extra kategori 2</span>
-              <input class="custom-category-input" type="text" maxlength="22" data-custom-index="1" placeholder="Ex. presenter" />
-            </label>
-          </div>
-        </div>
-
-        <div class="budget-layout">
-          <div class="budget-controls" id="budgetControls"></div>
-          <div class="budget-chart" id="budgetChart"></div>
-        </div>
-      </section>
-
-      <section class="panel panel--paste" aria-label="Klistra in nya rader">
-        <form class="paste-panel" id="pasteForm">
-          <div>
-            <p class="eyebrow">Nya rader</p>
-            <h3 id="pasteTitle">Klistra in transaktioner</h3>
-          </div>
-          <label class="field">
-            <span>Bankrader</span>
-            <textarea
-              id="pasteInput"
-              rows="4"
-              placeholder="2026-05-03	COOP MUNKEBA/26-05-02	-24.95"
-            ></textarea>
-          </label>
-          <div class="paste-actions">
-            <button class="button button--small" type="submit">Lägg till rader</button>
-            <span id="pasteStatus" class="paste-status"></span>
-          </div>
-        </form>
+            <div class="paste-actions">
+              <button class="button button--small" type="submit">Lägg till rader</button>
+              <span id="pasteStatus" class="paste-status"></span>
+            </div>
+          </form>
+        </section>
       </section>
     </main>
 
