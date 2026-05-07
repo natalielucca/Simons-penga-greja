@@ -896,7 +896,7 @@ function buildReport(summary) {
   const topCategory = summary.biggestCategory ? `${summary.biggestCategory.label} (${formatMoney(-summary.biggestCategory.amount)})` : "ingen";
 
   return [
-    `Simons Pengacheck - ${formatMonth(summary.month)}`,
+    `Simons penga-greja - ${formatMonth(summary.month)}`,
     "",
     `Simonutgifter: ${formatMoney(-summary.ownSpent)} (${summary.ownCount} rader)`,
     `Mammauppdrag: ${formatMoney(-summary.missionSpent)} (${summary.missionCount} rader, borträknas)`,
