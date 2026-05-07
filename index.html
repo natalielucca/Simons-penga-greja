@@ -3,229 +3,148 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Rikedomstrappan</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Manrope:wght@400;500;700;800&display=swap"
-      rel="stylesheet"
-    />
+    <title>Simons Pengacheck</title>
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
-    <div class="app-bg"></div>
     <main class="app-shell">
-      <section class="phone-frame">
-        <header class="hero-card">
-          <div class="hero-card__copy">
-            <p class="eyebrow">Vardagsekonomi</p>
-            <h1>Rikedomstrappan i fickformat.</h1>
-            <p class="hero-text">
-              Följ pengarna du har nu, se vad nästa steg är och bygg lugn i ekonomin
-              en nivå i taget.
-            </p>
-          </div>
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Barnbidrag 1 250 kr</p>
+          <h1>Simons Pengacheck</h1>
+        </div>
+        <div class="topbar__actions">
+          <button class="icon-button" id="resetButton" type="button" title="Återställ" aria-label="Återställ">↺</button>
+          <button class="button button--soft" id="printButton" type="button">Skriv ut</button>
+        </div>
+      </header>
 
-          <div class="hero-card__stats">
-            <article class="focus-chip">
-              <span class="focus-chip__label">Nästa fokus</span>
-              <strong id="headlineStep">Bygg första bufferten</strong>
-            </article>
-            <div class="hero-progress">
-              <div class="hero-progress__ring" id="heroProgressRing">
-                <div class="hero-progress__center">
-                  <strong id="heroProgressValue">0%</strong>
-                  <span>mot nästa steg</span>
-                </div>
-              </div>
-              <div class="hero-progress__copy">
-                <span class="focus-chip__label">Nästa milstolpe</span>
-                <strong id="heroMilestone">Sätt nästa automatiska sparande</strong>
-                <p id="heroMilestoneText">Se hur nära du är nästa nivå på trappan.</p>
-              </div>
-            </div>
-            <div class="hero-grid">
-              <article class="metric-card">
-                <span>Månadsmarginal</span>
-                <strong id="monthlyMargin">0 kr</strong>
-              </article>
-              <article class="metric-card">
-                <span>Spargrad</span>
-                <strong id="savingsRate">0%</strong>
-              </article>
-            </div>
-          </div>
-        </header>
+      <section class="status-strip" aria-label="Månadsöversikt">
+        <div class="month-tabs" id="monthTabs"></div>
+        <div class="status-pill" id="readyPill"></div>
+      </section>
 
-        <section class="panel panel--warm">
+      <section class="summary-grid" id="summaryGrid" aria-label="Kategorisummering"></section>
+
+      <section class="workspace">
+        <section class="panel panel--transactions" aria-label="Transaktioner">
           <div class="panel__header">
             <div>
-              <p class="eyebrow">Dagens läge</p>
-              <h2>Snabböversikt</h2>
+              <p class="eyebrow">Steg 1</p>
+              <h2>Sortera månaden</h2>
             </div>
-            <span class="panel__hint" id="statusTone">Stabilisera grunden först</span>
+            <div class="mini-score" id="clarityScore"></div>
           </div>
-          <div class="summary-grid" id="summaryGrid"></div>
+
+          <div class="category-legend" id="categoryLegend"></div>
+
+          <div class="table-wrap">
+            <table class="transaction-table">
+              <thead>
+                <tr>
+                  <th>Datum</th>
+                  <th>Text</th>
+                  <th>Belopp</th>
+                  <th>Kategori</th>
+                  <th>Minne</th>
+                </tr>
+              </thead>
+              <tbody id="transactionBody"></tbody>
+            </table>
+          </div>
         </section>
 
-        <section class="panel">
+        <aside class="panel panel--report" aria-label="Redovisning">
           <div class="panel__header">
             <div>
-              <p class="eyebrow">Din plan</p>
-              <h2>Rikedomstrappan</h2>
+              <p class="eyebrow">Steg 2</p>
+              <h2 id="reportTitle">Visa mamma</h2>
             </div>
-            <span class="panel__hint">Inspirerad av Nick Maggiullis tänk</span>
-          </div>
-          <div class="ladder-list" id="ladderList"></div>
-        </section>
-
-        <section class="panel">
-          <div class="panel__header">
-            <div>
-              <p class="eyebrow">Att göra nu</p>
-              <h2>Veckans förslag</h2>
-            </div>
-          </div>
-          <div class="action-list" id="actionList"></div>
-        </section>
-
-        <section class="panel panel--warm">
-          <div class="panel__header">
-            <div>
-              <p class="eyebrow">Testa lägen</p>
-              <h2>Scenarion</h2>
-            </div>
-            <span class="panel__hint">Tryck för att jämföra olika ekonomier</span>
-          </div>
-          <div class="scenario-row" id="scenarioButtons"></div>
-        </section>
-
-        <section class="panel panel--dense">
-          <div class="panel__header">
-            <div>
-              <p class="eyebrow">Mata in siffror</p>
-              <h2>Din ekonomi</h2>
-            </div>
-            <button class="ghost-button" id="resetButton" type="button">Återställ demo</button>
+            <button class="button button--small" id="copyReportButton" type="button">Kopiera</button>
           </div>
 
-          <form class="finance-form" id="financeForm">
+          <div class="reflection-grid">
             <label class="field">
-              <span>Nettolön per månad</span>
-              <input id="income" name="income" type="number" min="0" step="500" />
+              <span>Bästa köpet</span>
+              <textarea id="bestBuyInput" rows="2"></textarea>
             </label>
             <label class="field">
-              <span>Fasta kostnader</span>
-              <input id="fixedCosts" name="fixedCosts" type="number" min="0" step="500" />
+              <span>Kunde skippat</span>
+              <textarea id="skipBuyInput" rows="2"></textarea>
             </label>
             <label class="field">
-              <span>Rörliga kostnader</span>
-              <input id="variableCosts" name="variableCosts" type="number" min="0" step="500" />
+              <span>Största överraskningen</span>
+              <textarea id="surpriseInput" rows="2"></textarea>
             </label>
             <label class="field">
-              <span>Buffert idag</span>
-              <input id="emergencyFund" name="emergencyFund" type="number" min="0" step="1000" />
+              <span>Nästa månads mål</span>
+              <textarea id="goalInput" rows="2"></textarea>
+            </label>
+          </div>
+
+          <div class="report-output" id="reportOutput"></div>
+        </aside>
+      </section>
+
+      <section class="panel panel--budget" aria-label="Budget">
+        <div class="panel__header">
+          <div>
+            <p class="eyebrow">Steg 3</p>
+            <h2 id="budgetTitle">Budget för nästa 1 250 kr</h2>
+          </div>
+          <div class="budget-total" id="budgetTotal"></div>
+        </div>
+
+        <div class="custom-category-panel" aria-label="Egna kategorier">
+          <p class="eyebrow">Egna kategorier</p>
+          <div class="custom-category-grid" id="customCategoryFields">
+            <label class="field">
+              <span>Extra kategori 1</span>
+              <input class="custom-category-input" type="text" maxlength="22" data-custom-index="0" placeholder="Ex. spel" />
             </label>
             <label class="field">
-              <span>Hög ränta / dyr skuld</span>
-              <input id="highInterestDebt" name="highInterestDebt" type="number" min="0" step="1000" />
+              <span>Extra kategori 2</span>
+              <input class="custom-category-input" type="text" maxlength="22" data-custom-index="1" placeholder="Ex. presenter" />
             </label>
-            <label class="field">
-              <span>Långsiktigt sparande per månad</span>
-              <input id="investingMonthly" name="investingMonthly" type="number" min="0" step="500" />
-            </label>
-
-            <label class="toggle">
-              <input id="employerMatch" name="employerMatch" type="checkbox" />
-              <span>Jag tar redan vara på arbetsgivarens pensionsmatchning</span>
-            </label>
-          </form>
-        </section>
-
-        <section class="panel">
-          <div class="panel__header">
-            <div>
-              <p class="eyebrow">Vad händer om</p>
-              <h2>Framåtsimulator</h2>
-            </div>
           </div>
-          <div class="simulator-card">
-            <label class="field field--slider" for="extraAllocation">
-              <span>Extra att styra varje månad</span>
-              <input id="extraAllocation" name="extraAllocation" type="range" min="0" max="15000" step="500" />
-              <div class="slider-labels">
-                <small>0 kr</small>
-                <strong id="extraAllocationValue">0 kr</strong>
-                <small>15 000 kr</small>
-              </div>
-            </label>
-            <div class="simulator-grid" id="simulationGrid"></div>
-            <article class="simulation-insight" id="simulationInsight"></article>
+        </div>
+
+        <div class="budget-layout">
+          <div class="budget-controls" id="budgetControls"></div>
+          <div class="budget-chart" id="budgetChart"></div>
+        </div>
+      </section>
+
+      <section class="panel panel--paste" aria-label="Klistra in nya rader">
+        <form class="paste-panel" id="pasteForm">
+          <div>
+            <p class="eyebrow">Nya rader</p>
+            <h3 id="pasteTitle">Klistra in transaktioner</h3>
           </div>
-        </section>
-
-        <section class="panel panel--calm">
-          <div class="panel__header">
-            <div>
-              <p class="eyebrow">Fördelning</p>
-              <h2>Månadens pengar</h2>
-            </div>
+          <label class="field">
+            <span>Bankrader</span>
+            <textarea
+              id="pasteInput"
+              rows="4"
+              placeholder="2026-05-03	COOP MUNKEBA/26-05-02	-24.95"
+            ></textarea>
+          </label>
+          <div class="paste-actions">
+            <button class="button button--small" type="submit">Lägg till rader</button>
+            <span id="pasteStatus" class="paste-status"></span>
           </div>
-          <div class="budget-stack" id="budgetStack"></div>
-        </section>
-
-        <section class="panel panel--warm">
-          <div class="panel__header">
-            <div>
-              <p class="eyebrow">Spelpaus</p>
-              <h2>Snake</h2>
-            </div>
-            <span class="panel__hint" id="snakeStatus">Tryck start för att spela</span>
-          </div>
-          <div class="snake-card">
-            <div class="snake-meta">
-              <article class="metric-card metric-card--compact">
-                <span>Poäng</span>
-                <strong id="snakeScore">0</strong>
-              </article>
-              <article class="metric-card metric-card--compact">
-                <span>Bästa</span>
-                <strong id="snakeBestScore">0</strong>
-              </article>
-            </div>
-
-            <div
-              class="snake-board"
-              id="snakeBoard"
-              role="grid"
-              aria-label="Snake-spelplan"
-              tabindex="0"
-            ></div>
-
-            <div class="snake-actions">
-              <button class="ghost-button" id="snakeStartButton" type="button">Starta</button>
-              <button class="ghost-button" id="snakePauseButton" type="button">Pausa</button>
-              <button class="ghost-button" id="snakeRestartButton" type="button">Starta om</button>
-            </div>
-
-            <div class="snake-controls" aria-label="Styrkontroller">
-              <div class="snake-controls__spacer"></div>
-              <button class="scenario-button snake-control-button" type="button" data-snake-control="up">Upp</button>
-              <div class="snake-controls__spacer"></div>
-              <button class="scenario-button snake-control-button" type="button" data-snake-control="left">Vänster</button>
-              <button class="scenario-button snake-control-button" type="button" data-snake-control="down">Ner</button>
-              <button class="scenario-button snake-control-button" type="button" data-snake-control="right">Höger</button>
-            </div>
-
-            <p class="snake-help">
-              Styr med piltangenter eller WASD. Vägg eller egen kropp avslutar rundan.
-            </p>
-          </div>
-        </section>
+        </form>
       </section>
     </main>
 
-    <script src="./snake-game.js"></script>
+    <template id="summaryCardTemplate">
+      <article class="summary-card">
+        <p class="summary-card__label"></p>
+        <strong class="summary-card__value"></strong>
+        <span class="summary-card__note"></span>
+      </article>
+    </template>
+
     <script src="./app.js"></script>
   </body>
 </html>
